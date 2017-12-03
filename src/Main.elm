@@ -57,16 +57,14 @@ getLightStatus model =
 
 
 type alias LightState =
-    { on : Bool
-    }
+    Bool
 
 
 decodeLights : Json.Decode.Decoder (List ( String, LightState ))
 decodeLights =
     let
         decodeLight =
-            Json.Decode.map LightState
-                (Json.Decode.at [ "state", "on" ] Json.Decode.bool)
+            Json.Decode.at [ "state", "on" ] Json.Decode.bool
     in
         Json.Decode.keyValuePairs decodeLight
 
@@ -94,7 +92,7 @@ update msg model =
         GetLightStatus (Ok lights) ->
             let
                 hasActiveLight =
-                    List.any (\( lightId, state ) -> state.on) lights
+                    List.any (\( lightId, state ) -> state) lights
             in
                 ( { model
                     | lights = lights
