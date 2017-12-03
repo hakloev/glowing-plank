@@ -9,6 +9,12 @@ const HUE_CONFIG = {
 
 const flags = {
     "HUE_API_URL": `http://${HUE_CONFIG.bridgeIp}/api/${HUE_CONFIG.username}/`,
+    "RUTER": {
+        "timeToStop": 4,
+        "stops": [
+            3012120,
+        ]
+    }
 }
 
 const app = Main.embed(document.getElementById('root'), flags);

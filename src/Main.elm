@@ -15,9 +15,8 @@ import Task
 
 type alias Model =
     { hueApiUrl : String
-    , lights : List LightState
+    , ruterConfig : RuterConfig
     , hasActiveLight : Bool
-    , error : String
     }
 
 
@@ -45,6 +44,27 @@ type alias State =
     Bool
 
 
+type alias Stop =
+    Int
+
+
+type alias RuterConfig =
+    { timeToStop : Int
+    , stops : List Stop
+    }
+
+
+ruterConfigDecoder : Json.Decode.Decoder RuterConfig
+ruterConfigDecoder =
+    let
+        stopDecoder =
+            Json.Decode.list (Json.Decode.int)
+    in
+        Json.Decode.map2 RuterConfig
+            (Json.Decode.field "timeToStop" Json.Decode.int)
+            (Json.Decode.field "stops" stopDecoder)
+
+
 init : Json.Decode.Value -> ( Model, Cmd Msg )
 init flags =
     let
@@ -53,13 +73,21 @@ init flags =
                 Ok url ->
                     url
 
-                Err _ ->
-                    -- TOOD: Init model with error?
-                    Debug.crash "HUE_API_URL decode error"
+                Err err ->
+                    Debug.log "hueApiUrl error" (toString err)
+
+        ruterConfig =
+            case Json.Decode.decodeValue (Json.Decode.field "RUTER" ruterConfigDecoder) flags of
+                Ok config ->
+                    config
+
+                Err err ->
+                    { timeToStop = 0
+                    , stops = []
+                    }
     in
         ( { hueApiUrl = hueApiUrl
-          , lights = []
-          , error = ""
+          , ruterConfig = ruterConfig
           , hasActiveLight = False
           }
         , Cmd.none
