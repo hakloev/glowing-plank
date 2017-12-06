@@ -8,11 +8,17 @@ const HUE_CONFIG = {
 };
 
 const flags = {
-    "HUE_API_URL": `http://${HUE_CONFIG.bridgeIp}/api/${HUE_CONFIG.username}/`,
-    "RUTER": {
-        "timeToStop": 4,
-        "stops": [
-            3012120,
+    'HUE_API_URL': `http://${HUE_CONFIG.bridgeIp}/api/${HUE_CONFIG.username}/`,
+    'RUTER': {
+        'stops': [
+            {
+                'stopId': 3012120,
+                'timeToStop': 4,
+            },
+            {
+                'stopId': 3012121,
+                'timeToStop': 5,
+            }
         ]
     }
 }

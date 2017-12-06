@@ -4,72 +4,20 @@ import Html exposing (Html, text, div, img, button)
 import Html.Attributes exposing (disabled)
 import Html.Events exposing (onClick)
 import Time
-import Json.Decode
-import Json.Encode
-import Http
-import Task
+import Json.Decode as Decode
+import Messages exposing (Msg(..))
+import Model exposing (Model)
+import Data.Flags exposing (ruterConfigDecoder)
+import Data.Lights exposing (isAnyLightActive)
+import Api.Lights exposing (getLightStatus, turnOffLightsInSequence)
+import Api.Ruter exposing (getStopDepartures)
 
 
----- MODEL ----
-
-
-type alias Model =
-    { hueApiUrl : String
-    , ruterConfig : RuterConfig
-    , hasActiveLight : Bool
-    }
-
-
-type Msg
-    = TickLightStatus
-    | TurnOffLightsClick
-    | TurnOffLightsResponse (Result Http.Error (List LightState))
-    | GetLightStatus LightStatusResponse
-    | GetLightStatusThenTurnOff LightStatusResponse
-
-
-type alias LightStatusResponse =
-    Result Http.Error (List LightState)
-
-
-type alias LightState =
-    ( LightId, State )
-
-
-type alias LightId =
-    String
-
-
-type alias State =
-    Bool
-
-
-type alias Stop =
-    Int
-
-
-type alias RuterConfig =
-    { timeToStop : Int
-    , stops : List Stop
-    }
-
-
-ruterConfigDecoder : Json.Decode.Decoder RuterConfig
-ruterConfigDecoder =
-    let
-        stopDecoder =
-            Json.Decode.list (Json.Decode.int)
-    in
-        Json.Decode.map2 RuterConfig
-            (Json.Decode.field "timeToStop" Json.Decode.int)
-            (Json.Decode.field "stops" stopDecoder)
-
-
-init : Json.Decode.Value -> ( Model, Cmd Msg )
+init : Decode.Value -> ( Model, Cmd Msg )
 init flags =
     let
         hueApiUrl =
-            case Json.Decode.decodeValue (Json.Decode.field "HUE_API_URL" Json.Decode.string) flags of
+            case Decode.decodeValue (Decode.field "HUE_API_URL" Decode.string) flags of
                 Ok url ->
                     url
 
@@ -77,95 +25,23 @@ init flags =
                     Debug.log "hueApiUrl error" (toString err)
 
         ruterConfig =
-            case Json.Decode.decodeValue (Json.Decode.field "RUTER" ruterConfigDecoder) flags of
+            case Decode.decodeValue (Decode.at [ "RUTER", "stops" ] ruterConfigDecoder) flags of
                 Ok config ->
                     config
 
                 Err err ->
-                    { timeToStop = 0
-                    , stops = []
-                    }
+                    []
     in
         ( { hueApiUrl = hueApiUrl
           , ruterConfig = ruterConfig
           , hasActiveLight = False
           }
-        , Cmd.none
+        , getStopDepartures 30
         )
 
 
 
 ---- UPDATE ----
-
-
-turnOffLightRequest : Model -> String -> Task.Task Http.Error (List LightState)
-turnOffLightRequest model lightId =
-    let
-        url =
-            model.hueApiUrl ++ "lights/" ++ lightId ++ "/state"
-
-        body =
-            Json.Encode.object
-                [ ( "on", Json.Encode.bool False )
-                ]
-
-        decodeSuccess =
-            Json.Decode.keyValuePairs Json.Decode.bool
-
-        decoder =
-            Json.Decode.index 0 (Json.Decode.at [ "success" ] decodeSuccess)
-
-        request =
-            Http.request
-                { method = "PUT"
-                , headers = []
-                , url = url
-                , body = Http.jsonBody body
-                , expect = Http.expectJson decoder
-                , timeout = Nothing
-                , withCredentials = False
-                }
-    in
-        request |> Http.toTask
-
-
-turnOffLightsInSequence : Model -> List LightState -> Cmd Msg
-turnOffLightsInSequence model lights =
-    lights
-        |> List.map (\( lightId, state ) -> turnOffLightRequest model lightId)
-        |> Task.sequence
-        |> Task.map List.concat
-        |> Task.attempt TurnOffLightsResponse
-
-
-getLightStatus : Model -> (LightStatusResponse -> Msg) -> Cmd Msg
-getLightStatus model msg =
-    let
-        url =
-            model.hueApiUrl ++ "lights"
-
-        request =
-            Http.get url decodeLights
-    in
-        Http.send msg request
-
-
-decodeLights : Json.Decode.Decoder (List LightState)
-decodeLights =
-    let
-        decodeLight =
-            Json.Decode.at [ "state", "on" ] Json.Decode.bool
-    in
-        Json.Decode.keyValuePairs decodeLight
-
-
-isAnyLightActive : List LightState -> Bool
-isAnyLightActive lights =
-    let
-        isActiveLight ( lightId, state ) =
-            state
-    in
-        List.any isActiveLight lights
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -215,6 +91,20 @@ update msg model =
             in
                 ( model, Cmd.none )
 
+        GetStopDepartures (Ok departures) ->
+            let
+                _ =
+                    Debug.log "GetStopDepartures Ok" (toString departures)
+            in
+                ( model, Cmd.none )
+
+        GetStopDepartures (Err err) ->
+            let
+                _ =
+                    Debug.log "GetStopDepartures Error" (toString err)
+            in
+                ( model, Cmd.none )
+
 
 
 ---- VIEW ----
@@ -244,11 +134,11 @@ renderLightButton hasActiveLight =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Time.every (Time.second * 5) (always TickLightStatus)
+        [ Time.every (Time.second * 30) (always TickLightStatus)
         ]
 
 
-main : Program Json.Decode.Value Model Msg
+main : Program Decode.Value Model Msg
 main =
     Html.programWithFlags
         { view = view
