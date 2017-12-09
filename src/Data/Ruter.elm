@@ -1,9 +1,11 @@
 module Data.Ruter exposing (..)
 
+import Time.DateTime exposing (DateTime)
+
 
 type alias DepartureTime =
-    { aimed : String
-    , expected : String
+    { aimed : DateTime
+    , expected : DateTime
     }
 
 

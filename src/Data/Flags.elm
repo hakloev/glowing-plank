@@ -1,5 +1,6 @@
 module Data.Flags exposing (..)
 
+import Time
 import Json.Decode as Decode
 
 
@@ -10,6 +11,13 @@ type alias RuterConfig =
 type alias RuterStop =
     { stopId : Int
     , timeToStop : Int
+    }
+
+
+type alias Flags =
+    { hueApiUrl : String
+    , ruterConfig : RuterConfig
+    , now : Time.Time
     }
 
 

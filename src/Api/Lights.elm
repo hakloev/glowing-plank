@@ -9,11 +9,11 @@ import Model exposing (Model)
 import Messages exposing (Msg(TurnOffLightsResponse))
 
 
-getLightStatus : Model -> (Result Http.Error (List LightState) -> Msg) -> Cmd Msg
-getLightStatus model msg =
+getLightStatus : String -> (Result Http.Error (List LightState) -> Msg) -> Cmd Msg
+getLightStatus hueApiUrl msg =
     let
         url =
-            model.hueApiUrl ++ "lights"
+            hueApiUrl ++ "lights"
 
         request =
             Http.get url Data.Lights.decodeLights
