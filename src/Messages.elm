@@ -1,7 +1,7 @@
 module Messages exposing (Msg(..))
 
 import Http
-import Time
+import Time exposing (Time)
 import Data.Lights exposing (LightState)
 import Data.Ruter exposing (Departure)
 
@@ -13,5 +13,5 @@ type Msg
     | GetLightStatus (Result Http.Error (List LightState))
     | GetLightStatusThenTurnOff (Result Http.Error (List LightState))
     | GetStopDepartures (Result Http.Error (List Departure))
-    | GetTimeAndThenFetchDepartures Time.Time
-    | RenderDeparturesAgain Time.Time
+    | GetTimeAndThenFetchDepartures Time
+    | RenderDeparturesAgain Time

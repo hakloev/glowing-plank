@@ -1,32 +1,17 @@
-module Data.Flags exposing (..)
+module Data.Flags exposing (RuterStop, Flags)
 
-import Time
-import Json.Decode as Decode
-
-
-type alias RuterConfig =
-    List RuterStop
+import Time exposing (Time)
 
 
 type alias RuterStop =
     { stopId : Int
     , timeToStop : Int
+    , excludedLines : List String
     }
 
 
 type alias Flags =
     { hueApiUrl : String
-    , ruterConfig : RuterConfig
-    , now : Time.Time
+    , ruterConfig : RuterStop
+    , now : Time
     }
-
-
-ruterConfigDecoder : Decode.Decoder RuterConfig
-ruterConfigDecoder =
-    let
-        stopsDecoder =
-            Decode.map2 RuterStop
-                (Decode.field "stopId" Decode.int)
-                (Decode.field "timeToStop" Decode.int)
-    in
-        Decode.list stopsDecoder

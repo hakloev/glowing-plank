@@ -8,10 +8,9 @@ import Time exposing (Time)
 import Time.TimeZones exposing (europe_oslo)
 import Time.DateTime exposing (DateTime)
 import Time.ZonedDateTime exposing (ZonedDateTime)
-import Json.Decode as Decode
 import Messages exposing (Msg(..))
 import Model exposing (Model)
-import Data.Flags exposing (ruterConfigDecoder, Flags)
+import Data.Flags exposing (Flags)
 import Data.Lights exposing (isAnyLightActive)
 import Data.Ruter exposing (Departure)
 import Api.Lights exposing (getLightStatus, turnOffLightsInSequence)
@@ -44,6 +43,12 @@ init flags =
 timestampToDateTime : Time.Time -> DateTime
 timestampToDateTime timestamp =
     Time.DateTime.fromTimestamp timestamp
+
+
+getRelevantDepartures : List Departure -> List String -> List Departure
+getRelevantDepartures departures excludedLines =
+    departures
+        |> List.filter (\d -> not (List.member d.destination excludedLines))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -98,7 +103,7 @@ update msg model =
                 _ =
                     Debug.log "GetStopDepartures Ok" ""
             in
-                ( { model | departures = departures }, Cmd.none )
+                ( { model | departures = getRelevantDepartures departures model.ruterConfig.excludedLines }, Cmd.none )
 
         GetStopDepartures (Err err) ->
             let
@@ -107,12 +112,12 @@ update msg model =
             in
                 ( model, Cmd.none )
 
-        GetTimeAndThenFetchDepartures time ->
+        GetTimeAndThenFetchDepartures now ->
             let
-                _ =
-                    Debug.log "getime" (toString time)
+                nowAsDateTime =
+                    timestampToDateTime now
             in
-                ({ model | now = timestampToDateTime time } ! [ getStopDepartures 0 time ])
+                ({ model | now = nowAsDateTime } ! [ getStopDepartures model.ruterConfig nowAsDateTime ])
 
         RenderDeparturesAgain time ->
             ( { model | now = timestampToDateTime time }, Cmd.none )

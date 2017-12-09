@@ -9,16 +9,13 @@ const HUE_CONFIG = {
 
 const flags = {
     'hueApiUrl': `http://${HUE_CONFIG.bridgeIp}/api/${HUE_CONFIG.username}/`,
-    'ruterConfig': [
-        {
+    'ruterConfig': {
             'stopId': 3012120,
-            'timeToStop': 4,
-        },
-        {
-            'stopId': 3012121,
-            'timeToStop': 5,
-        }
-    ],
+            'timeToStop': 3,
+            'excludedLines': [
+                "Vestli",
+            ]
+    },
     'now': Date.now()
 }
 
