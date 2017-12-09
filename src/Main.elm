@@ -1,8 +1,8 @@
 module Main exposing (..)
 
 import Task
-import Html exposing (Html, text, div, img, button, p, span)
-import Html.Attributes exposing (disabled)
+import Html exposing (Html, text, div, img, button, p, span, ul, li)
+import Html.Attributes exposing (disabled, class, id, style)
 import Html.Events exposing (onClick)
 import Time exposing (Time)
 import Time.TimeZones exposing (europe_oslo)
@@ -124,20 +124,33 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ renderLightButton model.hasActiveLight
-        , renderDepartures model.departures model.now
+    div [ id "container" ]
+        [ renderDepartures model.departures model.now
+        , renderButtons model.hasActiveLight
         ]
+
+
+renderButtons : Bool -> Html Msg
+renderButtons hasActiveLight =
+    div [ id "buttons" ]
+        [ renderLightButton hasActiveLight
+        , renderSonosButton
+        ]
+
+
+renderSonosButton : Html Msg
+renderSonosButton =
+    button [ class "button" ] [ text "Skru av SONOS" ]
 
 
 renderLightButton : Bool -> Html Msg
 renderLightButton hasActiveLight =
     case hasActiveLight of
         True ->
-            button [ onClick TurnOffLightsClick ] [ text "Skru av lysene" ]
+            button [ class "button", onClick TurnOffLightsClick ] [ text "Skru av lysene" ]
 
         False ->
-            button [ disabled True ] [ text "Alle lys er avslått" ]
+            button [ class "button", disabled True ] [ text "Alle lys er avslått" ]
 
 
 isAfterNow : DateTime -> DateTime -> Bool
@@ -156,17 +169,19 @@ isAfterNow departureTime now =
 
 renderDepartures : List Departure -> DateTime -> Html Msg
 renderDepartures departures now =
-    case departures of
-        [] ->
-            text ""
+    div [ id "departures" ]
+        [ case departures of
+            [] ->
+                text ""
 
-        _ ->
-            div []
-                (departures
-                    |> List.filter (\d -> isAfterNow d.departure.expected now)
-                    |> List.take 10
-                    |> List.map (\d -> renderDeparture d now)
-                )
+            _ ->
+                ul [ id "departure-list" ]
+                    (departures
+                        |> List.filter (\d -> isAfterNow d.departure.expected now)
+                        |> List.take 10
+                        |> List.map (\d -> renderDeparture d now)
+                    )
+        ]
 
 
 printDepartureTime : DateTime -> DateTime -> String
@@ -201,17 +216,15 @@ printDepartureTime departureTime now =
 
 renderDeparture : Departure -> DateTime -> Html Msg
 renderDeparture departure now =
-    div []
-        [ p []
-            [ span []
-                [ text departure.lineNumber
-                , text ": "
-                , text departure.destination
-                , text " – "
-                , text (printDepartureTime departure.departure.expected now)
-                ]
+    let
+        lineStyle =
+            style [ ( "background-color", "#" ++ departure.lineColor ) ]
+    in
+        li [ class "departure-list-item" ]
+            [ div [ class "departure-line-number", lineStyle ] [ text departure.lineNumber ]
+            , div [ class "departure-line-title" ] [ text departure.destination ]
+            , div [ class "departure-time" ] [ text (printDepartureTime departure.departure.expected now) ]
             ]
-        ]
 
 
 
