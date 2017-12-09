@@ -11,9 +11,8 @@ import Time.ZonedDateTime exposing (ZonedDateTime)
 import Messages exposing (Msg(..))
 import Model exposing (Model)
 import Data.Flags exposing (Flags)
-import Data.Lights exposing (isAnyLightActive)
 import Data.Ruter exposing (Departure)
-import Api.Lights exposing (getLightStatus, turnOffLightsInSequence)
+import Api.Lights exposing (getLightState, setLightState)
 import Api.Ruter exposing (getStopDepartures)
 
 
@@ -30,8 +29,8 @@ init flags =
           , now = timestampToDateTime flags.now
           }
         , Cmd.batch
-            [ Task.perform GetTimeAndThenFetchDepartures Time.now
-            , getLightStatus flags.hueApiUrl GetLightStatus
+            [ Task.perform GetCurrentTimeAndThenFetchDepartures Time.now
+            , getLightState flags.hueApiUrl
             ]
         )
 
@@ -55,55 +54,37 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         TickLightStatus ->
-            model ! [ getLightStatus model.hueApiUrl GetLightStatus ]
+            model ! [ getLightState model.hueApiUrl ]
 
         TurnOffLightsClick ->
-            model ! [ getLightStatus model.hueApiUrl GetLightStatusThenTurnOff ]
+            model ! [ setLightState model.hueApiUrl False ]
 
-        TurnOffLightsResponse (Ok lightStatuses) ->
-            let
-                hasActiveLight =
-                    isAnyLightActive lightStatuses
-            in
-                ( { model | hasActiveLight = hasActiveLight }, Cmd.none )
+        GetLightState (Ok lightStatus) ->
+            ({ model | hasActiveLight = lightStatus.anyOn } ! [])
 
-        TurnOffLightsResponse (Err err) ->
+        GetLightState (Err err) ->
             let
                 _ =
-                    Debug.log "TurnOffLightsResponse Error" (toString err)
-            in
-                ( { model | hasActiveLight = True }, Cmd.none )
-
-        GetLightStatus (Ok lightStatuses) ->
-            let
-                hasActiveLight =
-                    isAnyLightActive lightStatuses
-            in
-                ({ model | hasActiveLight = hasActiveLight } ! [])
-
-        GetLightStatus (Err err) ->
-            let
-                _ =
-                    Debug.log "GetLightStatus Error" (toString err)
+                    Debug.log "GetLightState Error" (toString err)
             in
                 ( model, Cmd.none )
 
-        GetLightStatusThenTurnOff (Ok lights) ->
-            (model ! [ turnOffLightsInSequence model lights ])
+        SetLightStateResponse (Ok _) ->
+            ( model, getLightState model.hueApiUrl )
 
-        GetLightStatusThenTurnOff (Err err) ->
+        SetLightStateResponse (Err err) ->
             let
                 _ =
-                    Debug.log "GetLightStatusThenTurnOff Error" (toString err)
+                    Debug.log "SetLightStateResponse Error" (toString err)
             in
                 ( model, Cmd.none )
 
         GetStopDepartures (Ok departures) ->
-            let
-                _ =
-                    Debug.log "GetStopDepartures Ok" ""
-            in
-                ( { model | departures = getRelevantDepartures departures model.ruterConfig.excludedLines }, Cmd.none )
+            ( { model
+                | departures = getRelevantDepartures departures model.ruterConfig.excludedLines
+              }
+            , Cmd.none
+            )
 
         GetStopDepartures (Err err) ->
             let
@@ -112,7 +93,7 @@ update msg model =
             in
                 ( model, Cmd.none )
 
-        GetTimeAndThenFetchDepartures now ->
+        GetCurrentTimeAndThenFetchDepartures now ->
             let
                 nowAsDateTime =
                     timestampToDateTime now
@@ -240,7 +221,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Time.every (Time.second * 30) (always TickLightStatus)
-        , Time.every (Time.second * 30) (always GetTimeAndThenFetchDepartures Time.now)
+        , Time.every (Time.second * 30) (always GetCurrentTimeAndThenFetchDepartures Time.now)
         , Time.every (Time.second * 1) (always RenderDeparturesAgain Time.now)
         ]
 

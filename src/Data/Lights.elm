@@ -1,33 +1,33 @@
-module Data.Lights exposing (..)
+module Data.Lights exposing (decodeLightState, LightState)
 
 import Json.Decode as Decode
 
 
 type alias LightState =
-    ( LightId, State )
+    { allOn : Bool
+    , anyOn : Bool
+    }
 
 
-type alias LightId =
-    String
-
-
-type alias State =
-    Bool
-
-
-decodeLights : Decode.Decoder (List LightState)
-decodeLights =
+decodeLightState : Decode.Decoder LightState
+decodeLightState =
     let
-        decodeLight =
-            Decode.at [ "state", "on" ] Decode.bool
+        decodeState =
+            Decode.map2 LightState
+                (Decode.field "all_on" Decode.bool)
+                (Decode.field "any_on" Decode.bool)
     in
-        Decode.keyValuePairs decodeLight
+        Decode.at [ "state" ] decodeState
 
 
-isAnyLightActive : List LightState -> Bool
-isAnyLightActive lights =
-    let
-        isActiveLight ( lightId, state ) =
-            state
-    in
-        List.any isActiveLight lights
+
+-- decodeLightState : Decode.Decoder (List LightState)
+-- decodeLightState =
+--     Decode.keyValuePairs (Decode.at [ "state", "on" ] Decode.bool)
+-- isAnyLightActive : List LightState -> Bool
+-- isAnyLightActive lights =
+--     let
+--         isActiveLight ( lightId, state ) =
+--             state
+--     in
+--         List.any isActiveLight lights

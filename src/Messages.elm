@@ -9,9 +9,8 @@ import Data.Ruter exposing (Departure)
 type Msg
     = TickLightStatus
     | TurnOffLightsClick
-    | TurnOffLightsResponse (Result Http.Error (List LightState))
-    | GetLightStatus (Result Http.Error (List LightState))
-    | GetLightStatusThenTurnOff (Result Http.Error (List LightState))
+    | GetLightState (Result Http.Error LightState)
+    | SetLightStateResponse (Result Http.Error ())
+    | GetCurrentTimeAndThenFetchDepartures Time
     | GetStopDepartures (Result Http.Error (List Departure))
-    | GetTimeAndThenFetchDepartures Time
     | RenderDeparturesAgain Time
