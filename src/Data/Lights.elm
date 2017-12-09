@@ -18,16 +18,3 @@ decodeLightState =
                 (Decode.field "any_on" Decode.bool)
     in
         Decode.at [ "state" ] decodeState
-
-
-
--- decodeLightState : Decode.Decoder (List LightState)
--- decodeLightState =
---     Decode.keyValuePairs (Decode.at [ "state", "on" ] Decode.bool)
--- isAnyLightActive : List LightState -> Bool
--- isAnyLightActive lights =
---     let
---         isActiveLight ( lightId, state ) =
---             state
---     in
---         List.any isActiveLight lights

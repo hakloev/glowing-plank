@@ -41,36 +41,3 @@ setLightState hueApiUrl state =
                 }
     in
         Http.send SetLightStateResponse request
-
-
-
--- turnOffLightsInSequence : Model -> List LightState -> Cmd Msg
--- turnOffLightsInSequence model lights =
---     lights
---         |> List.map (\( lightId, state ) -> flipLightState model.hueApiUrl lightId False)
---         |> Task.sequence
---         |> Task.map List.concat
---         |> Task.attempt TurnOffLightsResponse
--- flipLightState : String -> String -> Bool -> Task.Task Http.Error (List LightState)
--- flipLightState hueApiUrl lightId state =
---     let
---         url =
---             hueApiUrl ++ "lights/" ++ lightId ++ "/state"
---         body =
---             Encode.object [ ( "on", Encode.bool state ) ]
---         decodeSuccess =
---             Decode.keyValuePairs Decode.bool
---         decoder =
---             Decode.index 0 (Decode.at [ "success" ] decodeSuccess)
---         request =
---             Http.request
---                 { method = "PUT"
---                 , headers = []
---                 , url = url
---                 , body = Http.jsonBody body
---                 , expect = Http.expectJson decoder
---                 , timeout = Nothing
---                 , withCredentials = False
---                 }
---     in
---         request |> Http.toTask
