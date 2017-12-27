@@ -185,10 +185,8 @@ printDepartureTime departureTime now =
         timeToPrint =
             if minutesUntilDeparture == 0 then
                 "nå"
-            else if minutesUntilDeparture == 1 then
-                "1 min"
             else if minutesUntilDeparture < 15 then
-                (toString minutesUntilDeparture) ++ " " ++ "minutter"
+                (toString minutesUntilDeparture) ++ " " ++ "min"
             else
                 (Time.ZonedDateTime.hour departureInLocalTime |> toString |> String.padLeft 2 '0')
                     ++ ":"

@@ -1,19 +1,22 @@
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700');
+
 body {
   font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
   font-size: 16px;
+  font-weight: 300;
   margin: 0;
-  background-color: black;
-  color: white;
+  background-color: white;
+  color: black;
 }
 
 #container {
     display: flex;
     justify-content: space-between;
+    margin: 0px 1.5em;
 }
 
 #departures {
     box-sizing: border-box;
-    padding: 30px;
 }
 
 #departure-list {
@@ -23,29 +26,40 @@ body {
 .departure-list-item {
     display: flex;
     align-items: center;
-    margin: 15px auto;
+    padding: 20px 12px;
+}
+
+.departure-list-item:not(:last-child) {
+    border-bottom: 1px solid #c4c4c4;
 }
 
 .departure-line-number {
-    display: inline-block;
+    display: inline-flex;
     flex: 0 0 auto;
+    justify-content: center;
+    align-items: center;
+    line-height: 1.2em;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: white;
+    width: 28px;
+    height: 28px;
     margin-right: 10px;
-    padding: 4px 10px;
-    font-weight: bold;
-    font-size: 20px;
+
 }
 
 .departure-line-title {
     flex: 1 1 auto;
-    margin-right: 15px;
-    font-size: 20px;
+    margin-right: 2.5em;
+    font-size: 1em;
+    font-weight: 300;
 }
 
 .departure-time {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     margin-left: 20px;
     font-size: 30px;
-    font-weight: bold;
+    font-weight: 400;
 }
 
 #buttons {
@@ -57,24 +71,3 @@ body {
 
 }
 
-.button {
-    appearance: none;
-    user-select: none;
-    display: inline-block;
-    padding: 40px;
-    margin-bottom: 0;
-    font-size: 40px;
-    font-weight: bold;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: middle;
-    border: 1px solid transparent;
-    background-image: none;
-    background-color: #eeaf00;
-    color: white;
-    flex: 1 1 0;
-}
-
-.button:not(:last-child) {
-    margin-bottom: 50px;
-}
