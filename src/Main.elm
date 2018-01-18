@@ -26,10 +26,10 @@ init flags =
           , ruterConfig = flags.ruterConfig
           , hasActiveLight = False
           , departures = []
-          , now = timestampToDateTime flags.now
+          , now = timestampToDateTime flags.currentTime
           }
         , Cmd.batch
-            [ Task.perform GetCurrentTimeAndThenFetchDepartures Time.now
+            [ getStopDepartures flags.ruterConfig
             , getLightState flags.hueApiUrl
             ]
         )
@@ -79,26 +79,22 @@ update msg model =
             in
                 ( model, Cmd.none )
 
-        GetStopDepartures (Ok departures) ->
+        TickDepartureFetch ->
+            model ! [ getStopDepartures model.ruterConfig ]
+
+        DeparturesReceived (Ok departures) ->
             ( { model
                 | departures = getRelevantDepartures departures model.ruterConfig.excludedLines
               }
             , Cmd.none
             )
 
-        GetStopDepartures (Err err) ->
+        DeparturesReceived (Err err) ->
             let
                 _ =
                     Debug.log "GetStopDepartures Error" (toString err)
             in
                 ( model, Cmd.none )
-
-        GetCurrentTimeAndThenFetchDepartures now ->
-            let
-                nowAsDateTime =
-                    timestampToDateTime now
-            in
-                ({ model | now = nowAsDateTime } ! [ getStopDepartures model.ruterConfig nowAsDateTime ])
 
         RenderDeparturesAgain time ->
             ( { model | now = timestampToDateTime time }, Cmd.none )
@@ -219,7 +215,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Time.every (Time.second * 30) (always TickLightStatus)
-        , Time.every (Time.second * 30) (always GetCurrentTimeAndThenFetchDepartures Time.now)
+        , Time.every (Time.second * 30) (always TickDepartureFetch)
         , Time.every (Time.second * 1) (always RenderDeparturesAgain Time.now)
         ]
 

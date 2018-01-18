@@ -13,5 +13,5 @@ type alias RuterStop =
 type alias Flags =
     { hueApiUrl : String
     , ruterConfig : RuterStop
-    , now : Time
+    , currentTime : Time
     }

@@ -14,6 +14,7 @@ type alias Departure =
     { lineColor : String
     , lineNumber : String
     , destination : String
+    , platform : String
     , departure : DepartureTime
     }
 
@@ -35,16 +36,20 @@ timeDecoder =
 stopDeparturesDecoder : Decode.Decoder (List Departure)
 stopDeparturesDecoder =
     let
+        departurePlatformDecoder =
+            Decode.field "DeparturePlatformName" Decode.string
+
         departureTimeDecoder =
             Decode.map2 DepartureTime
                 (Decode.field "AimedDepartureTime" timeDecoder)
                 (Decode.field "ExpectedDepartureTime" timeDecoder)
 
         departureListDecoder =
-            Decode.map4 Departure
+            Decode.map5 Departure
                 (Decode.at [ "Extensions", "LineColour" ] Decode.string)
                 (Decode.at [ "MonitoredVehicleJourney", "PublishedLineName" ] Decode.string)
                 (Decode.at [ "MonitoredVehicleJourney", "DestinationName" ] Decode.string)
+                (Decode.at [ "MonitoredVehicleJourney", "MonitoredCall" ] departurePlatformDecoder)
                 (Decode.at [ "MonitoredVehicleJourney", "MonitoredCall" ] departureTimeDecoder)
     in
         Decode.list departureListDecoder

@@ -11,6 +11,7 @@ type Msg
     | TurnOffLightsClick
     | GetLightState (Result Http.Error LightState)
     | SetLightStateResponse (Result Http.Error ())
-    | GetCurrentTimeAndThenFetchDepartures Time
-    | GetStopDepartures (Result Http.Error (List Departure))
+      -- Ruter API
+    | TickDepartureFetch
+    | DeparturesReceived (Result Http.Error (List Departure))
     | RenderDeparturesAgain Time
