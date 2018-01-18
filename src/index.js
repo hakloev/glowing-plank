@@ -1,7 +1,6 @@
 import './main.css'
 import { Main } from './Main.elm'
 import registerServiceWorker from './registerServiceWorker'
-import sonos from 'sonos'
 
 const HUE_CONFIG = {
     username: 'Q24Bao7PrQYunRG8iIWDt0LYrXPoO53rQVclvotD',
@@ -21,14 +20,6 @@ const flags = {
 }
 
 const app = Main.embed(document.getElementById('root'), flags);
-
-app.ports.stopAvailableSonosDevices.subscribe(() => {
-    sonos.search(device => {
-        device.stop((error, stopped) => {
-            console.log([error, stopped]);
-        })
-    })
-})
 
 registerServiceWorker()
 
