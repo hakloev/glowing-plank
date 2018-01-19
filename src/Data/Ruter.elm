@@ -1,4 +1,9 @@
-module Data.Ruter exposing (Departure, stopDeparturesDecoder)
+module Data.Ruter
+    exposing
+        ( Departure
+        , stopDeparturesDecoder
+        , getRelevantDepartures
+        )
 
 import Time.DateTime exposing (DateTime)
 import Json.Decode as Decode
@@ -53,3 +58,9 @@ stopDeparturesDecoder =
                 (Decode.at [ "MonitoredVehicleJourney", "MonitoredCall" ] departureTimeDecoder)
     in
         Decode.list departureListDecoder
+
+
+getRelevantDepartures : List Departure -> List String -> List Departure
+getRelevantDepartures departures excludedLines =
+    departures
+        |> List.filter (\d -> not (List.member d.destination excludedLines))
