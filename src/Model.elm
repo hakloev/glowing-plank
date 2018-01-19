@@ -1,14 +1,23 @@
-module Model exposing (Model)
+module Model
+    exposing
+        ( Model
+        , initalModel
+        )
 
-import Time.DateTime exposing (DateTime)
-import Data.Flags exposing (RuterStop)
+import Data.Flags exposing (Flags)
 import Data.Ruter exposing (Departure)
 
 
 type alias Model =
-    { now : DateTime
-    , hueApiUrl : String
-    , ruterConfig : RuterStop
+    { config : Flags
     , hasActiveLight : Bool
     , departures : List Departure
+    }
+
+
+initalModel : Flags -> Model
+initalModel flags =
+    { config = flags
+    , hasActiveLight = False
+    , departures = []
     }

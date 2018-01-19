@@ -1,4 +1,4 @@
-module Data.Ruter exposing (Departure, DepartureTime, stopDeparturesDecoder)
+module Data.Ruter exposing (Departure, stopDeparturesDecoder)
 
 import Time.DateTime exposing (DateTime)
 import Json.Decode as Decode

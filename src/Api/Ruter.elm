@@ -5,20 +5,20 @@ import Task
 import Time exposing (Time)
 import Time.ZonedDateTime exposing (ZonedDateTime)
 import Time.TimeZones exposing (europe_oslo)
-import Data.Flags exposing (RuterStop)
-import Data.Ruter exposing (Departure, DepartureTime, stopDeparturesDecoder)
+import Data.Flags exposing (StopConfig)
+import Data.Ruter exposing (Departure, stopDeparturesDecoder)
 import Messages exposing (Msg(DeparturesReceived))
 
 
-getStopDepartures : RuterStop -> Cmd Msg
-getStopDepartures stop =
+getStopDepartures : StopConfig -> Cmd Msg
+getStopDepartures stopConfig =
     Time.now
-        |> Task.andThen (\timestamp -> buildRequest stop timestamp)
+        |> Task.andThen (\timestamp -> buildRequestWithTimestamp stopConfig timestamp)
         |> Task.attempt DeparturesReceived
 
 
-buildRequest : RuterStop -> Time -> Task.Task Http.Error (List Departure)
-buildRequest { stopId, timeToStop } now =
+buildRequestWithTimestamp : StopConfig -> Time -> Task.Task Http.Error (List Departure)
+buildRequestWithTimestamp { stopId, timeToStop } now =
     let
         nowAsZonedDateTime =
             Time.ZonedDateTime.fromTimestamp (europe_oslo ()) now

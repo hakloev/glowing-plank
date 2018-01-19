@@ -7,11 +7,13 @@ import Data.Ruter exposing (Departure)
 
 
 type Msg
-    = TickLightStatus
+    = NoOp
+      -- Hue API and user actions
+    | TickLightStatus
     | TurnOffLightsClick
-    | GetLightState (Result Http.Error LightState)
-    | SetLightStateResponse (Result Http.Error ())
-      -- Ruter API
+    | LightStateReceived (Result Http.Error LightState)
+    | SetLightStateReceived (Result Http.Error ())
+      -- Ruter API and actions
     | TickDepartureFetch
+    | TickDepartureReRender Time
     | DeparturesReceived (Result Http.Error (List Departure))
-    | RenderDeparturesAgain Time

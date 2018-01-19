@@ -1,6 +1,5 @@
-module Main exposing (..)
+module Main exposing (main)
 
-import Task
 import Html exposing (Html, text, div, img, button, p, span, ul, li)
 import Html.Attributes exposing (disabled, class, id, style)
 import Html.Events exposing (onClick)
@@ -9,7 +8,7 @@ import Time.TimeZones exposing (europe_oslo)
 import Time.DateTime exposing (DateTime)
 import Time.ZonedDateTime exposing (ZonedDateTime)
 import Messages exposing (Msg(..))
-import Model exposing (Model)
+import Model exposing (Model, initalModel)
 import Data.Flags exposing (Flags)
 import Data.Ruter exposing (Departure)
 import Api.Lights exposing (getLightState, setLightState)
@@ -20,71 +19,54 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     let
         _ =
-            Debug.log "Init with flags: " (toString flags)
+            Debug.log "Init app with flags" (toString flags)
     in
-        ( { hueApiUrl = flags.hueApiUrl
-          , ruterConfig = flags.ruterConfig
-          , hasActiveLight = False
-          , departures = []
-          , now = timestampToDateTime flags.currentTime
-          }
+        ( initalModel flags
         , Cmd.batch
-            [ getStopDepartures flags.ruterConfig
+            [ getStopDepartures flags.ruterStop
             , getLightState flags.hueApiUrl
             ]
         )
 
 
-
----- UPDATE ----
-
-
-timestampToDateTime : Time.Time -> DateTime
-timestampToDateTime timestamp =
-    Time.DateTime.fromTimestamp timestamp
-
-
-getRelevantDepartures : List Departure -> List String -> List Departure
-getRelevantDepartures departures excludedLines =
-    departures
-        |> List.filter (\d -> not (List.member d.destination excludedLines))
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg ({ config } as model) =
     case msg of
+        NoOp ->
+            ( model, Cmd.none )
+
         TickLightStatus ->
-            model ! [ getLightState model.hueApiUrl ]
+            model ! [ getLightState config.hueApiUrl ]
 
         TurnOffLightsClick ->
-            model ! [ setLightState model.hueApiUrl False ]
+            model ! [ setLightState config.hueApiUrl False ]
 
-        GetLightState (Ok lightStatus) ->
-            ({ model | hasActiveLight = lightStatus.anyOn } ! [])
+        LightStateReceived (Ok lightState) ->
+            ({ model | hasActiveLight = lightState.anyOn } ! [])
 
-        GetLightState (Err err) ->
+        LightStateReceived (Err err) ->
             let
                 _ =
-                    Debug.log "GetLightState Error" (toString err)
+                    Debug.log "LightStateReceived error" (toString err)
             in
                 ( model, Cmd.none )
 
-        SetLightStateResponse (Ok _) ->
-            ( model, getLightState model.hueApiUrl )
+        SetLightStateReceived (Ok _) ->
+            ( model, getLightState config.hueApiUrl )
 
-        SetLightStateResponse (Err err) ->
+        SetLightStateReceived (Err err) ->
             let
                 _ =
-                    Debug.log "SetLightStateResponse Error" (toString err)
+                    Debug.log "SetLightStateReceived error" (toString err)
             in
                 ( model, Cmd.none )
 
         TickDepartureFetch ->
-            model ! [ getStopDepartures model.ruterConfig ]
+            model ! [ getStopDepartures config.ruterStop ]
 
         DeparturesReceived (Ok departures) ->
             ( { model
-                | departures = getRelevantDepartures departures model.ruterConfig.excludedLines
+                | departures = getRelevantDepartures departures config.ruterStop.excludedLines
               }
             , Cmd.none
             )
@@ -92,22 +74,22 @@ update msg model =
         DeparturesReceived (Err err) ->
             let
                 _ =
-                    Debug.log "GetStopDepartures Error" (toString err)
+                    Debug.log "DeparturesReceived error" (toString err)
             in
                 ( model, Cmd.none )
 
-        RenderDeparturesAgain time ->
-            ( { model | now = timestampToDateTime time }, Cmd.none )
-
-
-
----- VIEW ----
+        TickDepartureReRender time ->
+            let
+                updatedConfig =
+                    { config | currentTime = time }
+            in
+                ( { model | config = updatedConfig }, Cmd.none )
 
 
 view : Model -> Html Msg
-view model =
+view ({ config } as model) =
     div [ id "container" ]
-        [ renderDepartures model.departures model.now
+        [ renderDepartures model.departures config.currentTime
         , renderButtons model.hasActiveLight
         ]
 
@@ -135,13 +117,13 @@ renderLightButton hasActiveLight =
             button [ class "button", disabled True ] [ text "Alle lys er avslått" ]
 
 
-isAfterNow : DateTime -> DateTime -> Bool
+isAfterNow : DateTime -> Time -> Bool
 isAfterNow departureTime now =
     let
-        timeOrder =
-            Time.DateTime.compare departureTime now
+        nowAsDateTime =
+            Time.DateTime.fromTimestamp now
     in
-        case timeOrder of
+        case Time.DateTime.compare departureTime nowAsDateTime of
             GT ->
                 True
 
@@ -149,7 +131,7 @@ isAfterNow departureTime now =
                 False
 
 
-renderDepartures : List Departure -> DateTime -> Html Msg
+renderDepartures : List Departure -> Time -> Html Msg
 renderDepartures departures now =
     div [ id "departures" ]
         [ case departures of
@@ -166,11 +148,11 @@ renderDepartures departures now =
         ]
 
 
-printDepartureTime : DateTime -> DateTime -> String
+printDepartureTime : DateTime -> Time -> String
 printDepartureTime departureTime now =
     let
         deltaBetween =
-            Time.DateTime.delta departureTime now
+            Time.DateTime.delta departureTime (Time.DateTime.fromTimestamp now)
 
         minutesUntilDeparture =
             deltaBetween.minutes
@@ -194,7 +176,7 @@ printDepartureTime departureTime now =
         timeToPrint
 
 
-renderDeparture : Departure -> DateTime -> Html Msg
+renderDeparture : Departure -> Time -> Html Msg
 renderDeparture departure now =
     let
         lineStyle =
@@ -207,8 +189,10 @@ renderDeparture departure now =
             ]
 
 
-
----- PROGRAM ----
+getRelevantDepartures : List Departure -> List String -> List Departure
+getRelevantDepartures departures excludedLines =
+    departures
+        |> List.filter (\d -> not (List.member d.destination excludedLines))
 
 
 subscriptions : Model -> Sub Msg
@@ -216,7 +200,7 @@ subscriptions model =
     Sub.batch
         [ Time.every (Time.second * 30) (always TickLightStatus)
         , Time.every (Time.second * 30) (always TickDepartureFetch)
-        , Time.every (Time.second * 1) (always RenderDeparturesAgain Time.now)
+        , Time.every (Time.second * 1) (always TickDepartureReRender Time.now)
         ]
 
 
