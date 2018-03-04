@@ -22,7 +22,7 @@ init flags =
         ( initalModel flags
         , Cmd.batch
             [ getStopDepartures flags.ruterStop
-            , getLightState flags.hueApiUrl
+            -- , getLightState flags.hueApiUrl
             ]
         )
 
@@ -119,9 +119,9 @@ renderLightButton hasActiveLight =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Time.every (Time.second * 30) (always TickLightStatus)
-        , Time.every (Time.second * 30) (always TickDepartureFetch)
-        , Time.every (Time.second * 1) (always TickDepartureReRender Time.now)
+        -- [ Time.every (Time.second * 30) (always TickLightStatus)
+        [ Time.every (Time.second * 30) (always TickDepartureFetch)
+        -- , Time.every (Time.second * 1) (always TickDepartureReRender Time.now)
         ]
 
 

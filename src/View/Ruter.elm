@@ -10,7 +10,7 @@ import Messages exposing (Msg(..))
 import Data.Ruter exposing (Departure)
 
 
-view : List Departure -> Time -> Html Msg
+view : ( List Departure, List Departure ) -> Time -> Html Msg
 view departures now =
     renderDepartures departures now
 
@@ -29,18 +29,29 @@ isAfterNow departureTime now =
                 False
 
 
-renderDepartures : List Departure -> Time -> Html Msg
-renderDepartures departures now =
+renderDepartures : ( List Departure, List Departure ) -> Time -> Html Msg
+renderDepartures ( westboundDepartures, eastboundDepartures ) now =
     div [ id "departures" ]
-        [ case departures of
+        [ case westboundDepartures of
             [] ->
                 text ""
 
             _ ->
-                ul [ id "departure-list" ]
-                    (departures
-                        |> List.filter (\d -> isAfterNow d.departure.expected now)
-                        |> List.take 10
+                ul [ class "departure-list" ]
+                    (westboundDepartures
+                        |> List.filter (\d -> isAfterNow d.departure now)
+                        |> List.take 3
+                        |> List.map (\d -> renderDeparture d now)
+                    )
+        , case eastboundDepartures of
+            [] ->
+                text ""
+
+            _ ->
+                ul [ class "departure-list" ]
+                    (eastboundDepartures
+                        |> List.filter (\d -> isAfterNow d.departure now)
+                        |> List.take 3
                         |> List.map (\d -> renderDeparture d now)
                     )
         ]
@@ -76,12 +87,8 @@ printDepartureTime departureTime now =
 
 renderDeparture : Departure -> Time -> Html Msg
 renderDeparture departure now =
-    let
-        lineStyle =
-            style [ ( "background-color", "#" ++ departure.lineColor ) ]
-    in
-        li [ class "departure-list-item" ]
-            [ div [ class "departure-line-number", lineStyle ] [ text departure.lineNumber ]
-            , div [ class "departure-line-title" ] [ text departure.destination ]
-            , div [ class "departure-time" ] [ text (printDepartureTime departure.departure.expected now) ]
-            ]
+    li [ class "departure-list-item" ]
+        [ div [ class "departure-line-number" ] [ text departure.lineNumber ]
+        , div [ class "departure-line-title" ] [ text departure.destinationName ]
+        , div [ class "departure-time" ] [ text (printDepartureTime departure.departure now) ]
+        ]

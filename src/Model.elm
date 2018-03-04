@@ -11,7 +11,7 @@ import Data.Ruter exposing (Departure)
 type alias Model =
     { config : Flags
     , hasActiveLight : Bool
-    , departures : List Departure
+    , departures : ( List Departure, List Departure )
     }
 
 
@@ -19,5 +19,5 @@ initalModel : Flags -> Model
 initalModel flags =
     { config = flags
     , hasActiveLight = False
-    , departures = []
+    , departures = ( [], [] )
     }
